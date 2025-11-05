@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Plant Disease Detector</title>
+    <link rel="stylesheet" href="plant-ui.css"> 
+</head>
+<body>
+    <header>
+        <h1>🌿 Plant Disease Care System</h1>
+    </header>
+
+    <nav>
+        <button class="nav-button active" data-page="home">Home</button>
+        <button class="nav-button" data-page="detection">Detection</button>
+        <button class="nav-button" data-page="remedy">Remedy Guide</button>
+        <button class="nav-button" data-page="advancements">Advancements</button>
+    </nav>
+
+    <main>
+        
+        <section id="page-home" class="page-content active">
+            <h2>Welcome to Your Plant Health Assistant</h2>
+            <p>A smart solution for quick identification and actionable cures.</p>
+            <button class="cta-button" data-page="detection">Start Detection Now</button>
+            
+            <h3>Common Diseases We Detect</h3>
+            <div class="carousel-container">
+                
+                <div class="scene-container small-scene">
+                    <div class="card-3d">
+                        <div class="card-face card-front plant-disease-front">
+                            <i class="fas fa-bug fa-4x disease-icon blight-color"></i>
+                            <h4>Tomato Early Blight</h4>
+                            <p>Hover to see the recommended cure.</p>
+                        </div>
+                        <div class="card-face card-back plant-disease-back">
+                            <h4>Cure: Fungicide & Removal</h4>
+                            <p>Apply <i>Copper-based fungicide</i> and remove infected leaves immediately.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scene-container small-scene">
+                    <div class="card-3d">
+                        <div class="card-face card-front plant-disease-front">
+                            <i class="fas fa-cloud-showers-heavy fa-4x disease-icon lateblight-color"></i>
+                            <h4>Potato Late Blight</h4>
+                            <p>Hover to see the recommended cure.</p>
+                        </div>
+                        <div class="card-face card-back plant-disease-back">
+                            <h4>Cure: Systemic Treatment</h4>
+                            <p>Use <i>Systemic fungicides</i> and ensure plants have good air circulation.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scene-container small-scene">
+                    <div class="card-3d">
+                        <div class="card-face card-front plant-disease-front">
+                            <i class="fas fa-burn fa-4x disease-icon blotch-color"></i>
+                            <h4>Grape Leaf Blotch</h4>
+                            <p>Hover to see the recommended cure.</p>
+                        </div>
+                        <div class="card-face card-back plant-disease-back">
+                            <h4>Cure: Sanitation & Pruning</h4>
+                            <p><i>Prune affected areas</i> and clear debris to prevent overwintering spores.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="contact-box">
+                <p>Have doubts or suggestions? We are here to help.</p>
+                <p class="contact-details">
+                    <i class="fas fa-envelope"></i> 221030116@juitsolan.in  
+                </p>
+                <p>For <i>FAQs</i> or <i>new feature recommendations</i>, please use the email above.</p>
+            </div>
+        </section>
+
+        <section id="page-detection" class="page-content hidden">
+            <h2>1. Image Analyzer <i class="fas fa-leaf rotate-leaf"></i></h2>
+            <p>Upload a clear image of the affected plant leaf for diagnosis.</p>
+            <section id="upload-section">
+                <label for="image-upload" class="upload-label">
+                    <i class="fas fa-camera"></i> Select Image
+                </label>
+                <input type="file" id="image-upload" accept="image/*" hidden> 
+                
+                <div id="image-preview" class="preview-box">
+                    <p>No image selected yet.</p>
+                </div>
+
+                <button id="analyze-btn" disabled>2. Analyze Leaf & Get Cure</button>
+            </section>
+
+            <section id="results-section" class="hidden result-card">
+                <h3>Analysis Summary</h3>
+                <div id="loading-spinner" class="hidden">
+                    <p>Processing image and running ML model...</p>
+                </div>
+                <div id="result-content">
+                    <p>Disease: <strong id="disease-name">---</strong></p>
+                    <p>Confidence: <span id="confidence">---</span></p>
+                    <p>Remedy Reference: <a href="#" id="remedy-link" data-page="remedy">View Full Guide</a></p>
+                </div>
+            </section>
+            
+            <section id="api-analysis-detail" class="hidden api-detail-card">
+                <h3>🔬 Detailed API Analysis Output (Reserved for Backend)</h3>
+                <p>This space is reserved for the <i>JSON/data output</i> from the Backend Server REST API.</p>
+                <p class="placeholder-text">The API will render the final HTML for this section directly.</p>
+            </section>
+        </section>
+
+        <section id="page-remedy" class="page-content hidden">
+            <h2>Remedy Guide & Recommendations</h2>
+            <div id="remedy-detail">
+                <p class="placeholder-text">Specific remedy information will be dynamically generated here after detection.</p>
+            </div>
+        </section>
+
+        <section id="page-advancements" class="page-content hidden">
+            <h2>🌱 Latest Advancements in Plant Health AI</h2>
+            <div class="advancements-grid">
+                
+                <div class="advancement-card">
+                    <i class="fas fa-lightbulb fa-3x advancement-icon"></i>
+                    <h4>1. Hyperspectral Imaging</h4>
+                    <p>Detecting disease <i>days before</i> visible symptoms with advanced sensors.</p>
+                </div>
+                
+                <div class="advancement-card">
+                    <i class="fas fa-mobile-alt fa-3x advancement-icon"></i>
+                    <h4>2. Edge Computing & Mobile AI</h4>
+                    <p>Instant, <i>on-device</i> diagnosis without relying on constant internet connection.</p>
+                </div>
+                
+                <div class="advancement-card">
+                    <i class="fas fa-project-diagram fa-3x advancement-icon"></i>
+                    <h4>3. Fusion Models (CNN + Time Series)</h4>
+                    <p>Integrating <i>image and weather data</i> for smarter predictions and remedies.</p>
+                </div>
+
+            </div>
+            <p class="contact-box-small">Inspired by these trends? Share your own <i>recommendations</i> via the contact email!</p>
+        </section>
+
+    </main>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="detector-logic.js"></script>
+</body>
+</html>
