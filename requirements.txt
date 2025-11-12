@@ -1,0 +1,6 @@
+Flask
+Flask-CORS
+torch
+torchvision
+numpy
+Pillow

@@ -1,13 +1,13 @@
-// !! We need to REPLACE THIS with the actual URL of your deployed Python/ML Backend API !!
-const BACKEND_API_URL = 'http://localhost:5000/api/detect'; 
+// THIS IS THE CORRECT ENDPOINT ADDRESS - MUST MATCH app.py
+const BACKEND_API_URL = 'https://expert-meme-69v4xgjw7wpqh476j-5000.app.github.dev/api/detect';
 
-// --- DOM ELEMENTS ---
 const navButtons = document.querySelectorAll('.nav-button');
 const pageContents = document.querySelectorAll('.page-content');
 const ctaButtons = document.querySelectorAll('.cta-button'); 
 
 const fileInput = document.getElementById('image-upload');
 const analyzeButton = document.getElementById('analyze-btn');
+const imagePreview = document.getElementById('image-preview');
 const resultsSection = document.getElementById('results-section');
 const apiDetailSection = document.getElementById('api-analysis-detail'); 
 const loadingSpinner = document.getElementById('loading-spinner');
@@ -32,7 +32,6 @@ function showPage(pageId) {
         }
     });
     
-    // Hide the detailed analysis section when switching pages, unless it is the detection page
     if (pageId !== 'detection') {
          apiDetailSection.classList.add('hidden');
     }
@@ -52,7 +51,7 @@ ctaButtons.forEach(button => {
 
 showPage('home'); 
 
-// --- IMAGE ANALYSIS LOGIC (MOCK DATA) ---
+// --- IMAGE ANALYSIS LOGIC ---
 
 fileInput.addEventListener('change', (event) => {
     uploadedFile = event.target.files[0];
@@ -82,22 +81,30 @@ analyzeButton.addEventListener('click', async () => {
     resultContent.classList.add('hidden'); 
     analyzeButton.disabled = true;
 
-    // --- TEMPORARY MOCK DATA ---
-    setTimeout(() => {
-        const mockData = {
-            disease: "Tomato Late Blight",
-            confidence: 0.98,
-            remedy: "Immediate application of a systemic fungicide (e.g., Chlorothalonil) and removal of all infected leaves to prevent rapid spore spread. Ensure proper ventilation."
-        };
-        displayResults(mockData);
-        
+    // --- REAL API CALL ---
+    const formData = new FormData();
+    formData.append('file', uploadedFile); 
+
+    try {
+        // This fetch call uses the correct POST method and URL
+        const response = await fetch(BACKEND_API_URL, {
+            method: 'POST', 
+            body: formData, 
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server returned status: ${response.status}`);
+        }
+
+        const data = await response.json(); 
+        displayResults(data);
+
+    } catch (error) {
+        displayResults({ disease: 'Connection Failed', confidence: 0, remedy: 'Could not reach server. Check Python terminal log.' });
+    } finally {
         loadingSpinner.classList.add('hidden');
         analyzeButton.disabled = false;
-        
-    }, 2500); 
-    // ----------------------------
-    
-    // ** UNCOMMENT REAL API CALL HERE WHEN READY **
+    }
 });
 
 // --- Function to update the HTML with the analysis data ---
@@ -107,7 +114,6 @@ function displayResults(data) {
     document.getElementById('disease-name').textContent = data.disease || 'Undetermined';
     document.getElementById('confidence').textContent = confidencePercent;
     
-    // Update the remedy guide content with the specific result
     const remedyDetail = document.getElementById('remedy-detail');
     remedyDetail.innerHTML = `
         <h2>Remedy for ${data.disease}</h2>
@@ -119,11 +125,9 @@ function displayResults(data) {
         <button class="cta-button" onclick="showPage('detection')">Back to Analyzer</button>
     `;
     
-    // Reveal the detailed analysis section on the Detection page
     apiDetailSection.classList.remove('hidden');
 
-    // Switch to the remedy page after displaying results
-    if (data.disease !== 'Analysis Failed') {
+    if (data.disease !== 'Connection Failed') {
         showPage('remedy');
     }
     
