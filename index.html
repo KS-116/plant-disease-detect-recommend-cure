@@ -26,10 +26,13 @@
         document.getElementById("result-img").src = imgURL;
     }
 </script>
-<body>
-    <header>
-        <h1> Plant Disease Care System</h1>
-    </header>
+    <input type="file" accept="image/*" onchange="sendImageToBackend(this)">
+    <br>
+    <img id="result-img" style="max-width:400px; margin-top:20px;">
+    <body>
+        <header>
+            <h1> Plant Disease Care System</h1>
+        </header>
 
     <nav>
         <button class="nav-button active" data-page="home">Home</button>
