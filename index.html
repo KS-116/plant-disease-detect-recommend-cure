@@ -6,6 +6,26 @@
     <title>Intelligent Plant Disease Detector</title>
     <link rel="stylesheet" href="plant-ui.css"> 
 </head>
+<script>
+    const backendURL = "https://your-backend-name.onrender.com/predict"; // replace with your Render backend URL
+    async function sendImageToBackend(fileInput) {
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await fetch(backendURL, {
+        method: "POST",
+        body: formData
+        });
+        
+        if (!response.ok) {
+            alert("Error connecting to backend!");
+            return;
+        }
+        const blob = await response.blob();
+        const imgURL = URL.createObjectURL(blob);
+        document.getElementById("result-img").src = imgURL;
+    }
+</script>
 <body>
     <header>
         <h1> Plant Disease Care System</h1>
