@@ -1,5 +1,5 @@
 // Backend URL
-const BACKEND_API_URL = 'https://plant-disease-backend-2a4p.onrender.com/api/detect';
+const BACKEND_API_URL = "https://plant-disease-backend-2a4p.onrender.com/predict";
 
 const navButtons = document.querySelectorAll('.nav-button');
 const pageContents = document.querySelectorAll('.page-content');
