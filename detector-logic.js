@@ -1,4 +1,4 @@
-// FINAL BACKEND URL (Render)
+// Backend URL
 const BACKEND_API_URL = 'https://plant-disease-backend-2a4p.onrender.com/api/detect';
 
 const navButtons = document.querySelectorAll('.nav-button');
@@ -26,28 +26,17 @@ function showPage(pageId) {
         if (btn.getAttribute('data-page') === pageId) btn.classList.add('active');
     });
 
-    if (pageId !== 'detection') {
-        apiDetailSection.classList.add('hidden');
-    }
+    if (pageId !== 'detection') apiDetailSection.classList.add('hidden');
 }
 
-navButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        showPage(button.getAttribute('data-page'));
-    });
-});
-ctaButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        showPage(button.getAttribute('data-page'));
-    });
-});
+navButtons.forEach(button => button.addEventListener('click', () => showPage(button.getAttribute('data-page'))));
+ctaButtons.forEach(button => button.addEventListener('click', () => showPage(button.getAttribute('data-page'))));
 
 showPage('home');
 
 // -------------------- IMAGE UPLOAD --------------------
 fileInput.addEventListener('change', event => {
     uploadedFile = event.target.files[0];
-
     if (uploadedFile) {
         const reader = new FileReader();
         reader.onload = e => {
@@ -59,7 +48,6 @@ fileInput.addEventListener('change', event => {
         imagePreview.innerHTML = '<p>No image selected yet.</p>';
         analyzeButton.disabled = true;
     }
-
     resultsSection.classList.add('hidden');
     apiDetailSection.classList.add('hidden');
 });
@@ -74,21 +62,18 @@ analyzeButton.addEventListener('click', async () => {
     analyzeButton.disabled = true;
 
     const formData = new FormData();
-    formData.append('image', uploadedFile);   // backend expects "image"
+    formData.append('image', uploadedFile);
 
     try {
-        const response = await fetch(BACKEND_API_URL, {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) 
-            throw new Error(`Server returned ${response.status}`);
+        const response = await fetch(BACKEND_API_URL, { method: 'POST', body: formData });
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
 
         const data = await response.json();
 
         // Display mask image (base64)
-        document.getElementById('result-img').src = `data:image/png;base64,${data.mask}`;
+        const resultImg = document.getElementById('result-img');
+        resultImg.src = `data:image/png;base64,${data.mask}`;
+        resultImg.style.display = 'block';
 
         // Display disease + remedy
         document.getElementById('disease-name').innerText = data.disease;
@@ -96,7 +81,7 @@ analyzeButton.addEventListener('click', async () => {
 
         resultContent.classList.remove('hidden');
 
-        // Optional: show full API JSON for debugging
+        // Show API JSON
         apiDetailSection.classList.remove('hidden');
         apiDetailSection.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
 
