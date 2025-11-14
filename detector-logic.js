@@ -1,39 +1,34 @@
-// THIS IS THE CORRECT ENDPOINT ADDRESS - MUST MATCH app.py
-const BACKEND_API_URL = 'https://expert-meme-69v4xgjw7wpqh476j-5000.app.github.dev/api/detect';
+// FINAL BACKEND URL (Render)
+const BACKEND_API_URL = 'https://plant-disease-backend-2a4p.onrender.com/predict';
 
 const navButtons = document.querySelectorAll('.nav-button');
 const pageContents = document.querySelectorAll('.page-content');
-const ctaButtons = document.querySelectorAll('.cta-button'); 
+const ctaButtons = document.querySelectorAll('.cta-button');
 
 const fileInput = document.getElementById('image-upload');
 const analyzeButton = document.getElementById('analyze-btn');
 const imagePreview = document.getElementById('image-preview');
 const resultsSection = document.getElementById('results-section');
-const apiDetailSection = document.getElementById('api-analysis-detail'); 
+const apiDetailSection = document.getElementById('api-analysis-detail');
 const loadingSpinner = document.getElementById('loading-spinner');
 const resultContent = document.getElementById('result-content');
 
-let uploadedFile = null; 
+let uploadedFile = null;
 
-// --- PAGE NAVIGATION LOGIC ---
+// -------------------- PAGE NAVIGATION --------------------
 
 function showPage(pageId) {
     pageContents.forEach(page => page.classList.add('hidden'));
+    const target = document.getElementById(`page-${pageId}`);
+    if (target) target.classList.remove('hidden');
 
-    const targetPage = document.getElementById(`page-${pageId}`);
-    if (targetPage) {
-        targetPage.classList.remove('hidden');
-    }
-
-    navButtons.forEach(button => {
-        button.classList.remove('active');
-        if (button.getAttribute('data-page') === pageId) {
-            button.classList.add('active');
-        }
+    navButtons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-page') === pageId) btn.classList.add('active');
     });
-    
+
     if (pageId !== 'detection') {
-         apiDetailSection.classList.add('hidden');
+        apiDetailSection.classList.add('hidden');
     }
 }
 
@@ -42,94 +37,99 @@ navButtons.forEach(button => {
         showPage(button.getAttribute('data-page'));
     });
 });
-
 ctaButtons.forEach(button => {
     button.addEventListener('click', () => {
         showPage(button.getAttribute('data-page'));
     });
 });
 
-showPage('home'); 
+showPage('home');
 
-// --- IMAGE ANALYSIS LOGIC ---
+// -------------------- IMAGE UPLOAD --------------------
 
-fileInput.addEventListener('change', (event) => {
+fileInput.addEventListener('change', event => {
     uploadedFile = event.target.files[0];
-    
+
     if (uploadedFile) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-            document.getElementById('image-preview').innerHTML = `<img src="${e.target.result}" alt="Uploaded Leaf Image">`;
+        reader.onload = e => {
+            imagePreview.innerHTML = `<img src="${e.target.result}" alt="Uploaded Leaf Image">`;
         };
         reader.readAsDataURL(uploadedFile);
         analyzeButton.disabled = false;
     } else {
-         document.getElementById('image-preview').innerHTML = '<p>No image selected yet.</p>';
-        analyzeButton.disabled = true; 
+        imagePreview.innerHTML = '<p>No image selected yet.</p>';
+        analyzeButton.disabled = true;
     }
-    
+
     resultsSection.classList.add('hidden');
-    apiDetailSection.classList.add('hidden'); 
-    
+    apiDetailSection.classList.add('hidden');
 });
+
+// -------------------- PREDICTION --------------------
 
 analyzeButton.addEventListener('click', async () => {
     if (!uploadedFile) return;
 
     loadingSpinner.classList.remove('hidden');
-    resultsSection.classList.remove('hidden'); 
-    resultContent.classList.add('hidden'); 
+    resultsSection.classList.remove('hidden');
+    resultContent.classList.add('hidden');
     analyzeButton.disabled = true;
 
-    // --- REAL API CALL ---
     const formData = new FormData();
-    formData.append('file', uploadedFile); 
+    formData.append('image', uploadedFile);   // IMPORTANT: backend expects "image"
 
     try {
-        // This fetch call uses the correct POST method and URL
         const response = await fetch(BACKEND_API_URL, {
-            method: 'POST', 
-            body: formData, 
+            method: 'POST',
+            body: formData
         });
 
-        if (!response.ok) {
-            throw new Error(`Server returned status: ${response.status}`);
-        }
+        if (!response.ok) 
+            throw new Error(`Server returned ${response.status}`);
 
-        const data = await response.json(); 
-        displayResults(data);
+        const data = await response.json();
+        displayMask(data.mask);
 
-    } catch (error) {
-        displayResults({ disease: 'Connection Failed', confidence: 0, remedy: 'Could not reach server. Check Python terminal log.' });
+    } catch (err) {
+        console.error(err);
+        alert("❌ Could not connect to backend!");
     } finally {
         loadingSpinner.classList.add('hidden');
         analyzeButton.disabled = false;
     }
 });
 
-// --- Function to update the HTML with the analysis data ---
-function displayResults(data) {
-    const confidencePercent = (data.confidence * 100).toFixed(2) + '%';
-    
-    document.getElementById('disease-name').textContent = data.disease || 'Undetermined';
-    document.getElementById('confidence').textContent = confidencePercent;
-    
-    const remedyDetail = document.getElementById('remedy-detail');
-    remedyDetail.innerHTML = `
-        <h2>Remedy for ${data.disease}</h2>
-        <p class="placeholder-text">Model Confidence: *${confidencePercent}*</p>
-        <div class="guide-card">
-            <h4>Recommended Action:</h4>
-            <p>${data.remedy}</p>
-        </div>
-        <button class="cta-button" onclick="showPage('detection')">Back to Analyzer</button>
-    `;
-    
-    apiDetailSection.classList.remove('hidden');
+// -------------------- DISPLAY MASK --------------------
 
-    if (data.disease !== 'Connection Failed') {
-        showPage('remedy');
+function displayMask(maskArray) {
+    const height = maskArray.length;
+    const width = maskArray[0].length;
+
+    // Create canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(width, height);
+
+    // Fill canvas with mask pixels
+    let index = 0;
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const v = maskArray[y][x]; // 0 or 255
+            imgData.data[index++] = v;     // R
+            imgData.data[index++] = v;     // G
+            imgData.data[index++] = v;     // B
+            imgData.data[index++] = 255;   // A
+        }
     }
-    
+
+    ctx.putImageData(imgData, 0, 0);
+
+    // Display on page
+    document.getElementById('result-img').src = canvas.toDataURL();
+
     resultContent.classList.remove('hidden');
 }
