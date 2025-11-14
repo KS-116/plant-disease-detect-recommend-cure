@@ -1,5 +1,5 @@
 // FINAL BACKEND URL (Render)
-const BACKEND_API_URL = 'https://plant-disease-backend-2a4p.onrender.com/predict';
+const BACKEND_API_URL = 'https://plant-disease-backend-2a4p.onrender.com/api/detect';
 
 const navButtons = document.querySelectorAll('.nav-button');
 const pageContents = document.querySelectorAll('.page-content');
@@ -16,7 +16,6 @@ const resultContent = document.getElementById('result-content');
 let uploadedFile = null;
 
 // -------------------- PAGE NAVIGATION --------------------
-
 function showPage(pageId) {
     pageContents.forEach(page => page.classList.add('hidden'));
     const target = document.getElementById(`page-${pageId}`);
@@ -46,7 +45,6 @@ ctaButtons.forEach(button => {
 showPage('home');
 
 // -------------------- IMAGE UPLOAD --------------------
-
 fileInput.addEventListener('change', event => {
     uploadedFile = event.target.files[0];
 
@@ -67,7 +65,6 @@ fileInput.addEventListener('change', event => {
 });
 
 // -------------------- PREDICTION --------------------
-
 analyzeButton.addEventListener('click', async () => {
     if (!uploadedFile) return;
 
@@ -77,7 +74,7 @@ analyzeButton.addEventListener('click', async () => {
     analyzeButton.disabled = true;
 
     const formData = new FormData();
-    formData.append('image', uploadedFile);   // IMPORTANT: backend expects "image"
+    formData.append('image', uploadedFile);   // backend expects "image"
 
     try {
         const response = await fetch(BACKEND_API_URL, {
@@ -89,7 +86,19 @@ analyzeButton.addEventListener('click', async () => {
             throw new Error(`Server returned ${response.status}`);
 
         const data = await response.json();
-        displayMask(data.mask);
+
+        // Display mask image (base64)
+        document.getElementById('result-img').src = `data:image/png;base64,${data.mask}`;
+
+        // Display disease + remedy
+        document.getElementById('disease-name').innerText = data.disease;
+        document.getElementById('remedy-text').innerText = data.remedy;
+
+        resultContent.classList.remove('hidden');
+
+        // Optional: show full API JSON for debugging
+        apiDetailSection.classList.remove('hidden');
+        apiDetailSection.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
 
     } catch (err) {
         console.error(err);
@@ -99,37 +108,3 @@ analyzeButton.addEventListener('click', async () => {
         analyzeButton.disabled = false;
     }
 });
-
-// -------------------- DISPLAY MASK --------------------
-
-function displayMask(maskArray) {
-    const height = maskArray.length;
-    const width = maskArray[0].length;
-
-    // Create canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-
-    const ctx = canvas.getContext('2d');
-    const imgData = ctx.createImageData(width, height);
-
-    // Fill canvas with mask pixels
-    let index = 0;
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const v = maskArray[y][x]; // 0 or 255
-            imgData.data[index++] = v;     // R
-            imgData.data[index++] = v;     // G
-            imgData.data[index++] = v;     // B
-            imgData.data[index++] = 255;   // A
-        }
-    }
-
-    ctx.putImageData(imgData, 0, 0);
-
-    // Display on page
-    document.getElementById('result-img').src = canvas.toDataURL();
-
-    resultContent.classList.remove('hidden');
-}
