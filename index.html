@@ -28,59 +28,6 @@
         <h2>Welcome to Your Plant Health Assistant</h2>
         <p>A smart solution for quick identification and actionable cures.</p>
         <button class="cta-button" data-page="detection">Start Detection Now</button>
-
-        <h3>Common Diseases We Detect</h3>
-        <div class="carousel-container">
-            <div class="scene-container small-scene">
-                <div class="card-3d">
-                    <div class="card-face card-front plant-disease-front">
-                        <i class="fas fa-bug fa-4x disease-icon blight-color"></i>
-                        <h4>Tomato Early Blight</h4>
-                        <p>Hover to see the recommended cure.</p>
-                    </div>
-                    <div class="card-face card-back plant-disease-back">
-                        <h4>Cure: Fungicide & Removal</h4>
-                        <p>Apply <i>Copper-based fungicide</i> and remove infected leaves immediately.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="scene-container small-scene">
-                <div class="card-3d">
-                    <div class="card-face card-front plant-disease-front">
-                        <i class="fas fa-cloud-showers-heavy fa-4x disease-icon lateblight-color"></i>
-                        <h4>Potato Late Blight</h4>
-                        <p>Hover to see the recommended cure.</p>
-                    </div>
-                    <div class="card-face card-back plant-disease-back">
-                        <h4>Cure: Systemic Treatment</h4>
-                        <p>Use <i>Systemic fungicides</i> and ensure plants have good air circulation.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="scene-container small-scene">
-                <div class="card-3d">
-                    <div class="card-face card-front plant-disease-front">
-                        <i class="fas fa-burn fa-4x disease-icon blotch-color"></i>
-                        <h4>Grape Leaf Blotch</h4>
-                        <p>Hover to see the recommended cure.</p>
-                    </div>
-                    <div class="card-face card-back plant-disease-back">
-                        <h4>Cure: Sanitation & Pruning</h4>
-                        <p><i>Prune affected areas</i> and clear debris to prevent overwintering spores.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="contact-box">
-            <p>Have doubts or suggestions? We are here to help.</p>
-            <p class="contact-details">
-                <i class="fas fa-envelope"></i> 221030116@juitsolan.in
-            </p>
-            <p>For <i>FAQs</i> or <i>new feature recommendations</i>, please use the email above.</p>
-        </div>
     </section>
 
     <!-- DETECTION PAGE -->
@@ -93,7 +40,6 @@
                 <i class="fas fa-camera"></i> Select Image
             </label>
 
-            <!-- FIXED: sends image to backend -->
             <input type="file" id="image-upload" accept="image/*" hidden onchange="sendImageToBackend(this)"> 
 
             <div id="image-preview" class="preview-box">
@@ -106,14 +52,8 @@
             <h3>Analysis Summary</h3>
             <div id="result-content">
                 <p>Disease: <strong id="disease-name">---</strong></p>
-                <p>Confidence: <span id="confidence">---</span></p>
-                <p>Remedy Reference: <a href="#" id="remedy-link" data-page="remedy">View Full Guide</a></p>
+                <p>Remedy Reference: <span id="remedy-text">---</span></p>
             </div>
-        </section>
-
-        <section id="api-analysis-detail" class="hidden api-detail-card">
-            <h3> Detailed API Analysis Output</h3>
-            <p>This area will display JSON output from the backend.</p>
         </section>
     </section>
 
@@ -151,35 +91,46 @@
 
 <!-- BACKEND SCRIPT -->
 <script>
-const backendURL = "https://plant-disease-backend-2a4p.onrender.com/predict"; 
-
+const backendURL = "https://plant-disease-backend-2a4p.onrender.com/api/detect"; // updated route
 async function sendImageToBackend(fileInput) {
     const file = fileInput.files[0];
     if (!file) return;
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("image", file); // updated key to match backend
 
     // show preview
     const previewURL = URL.createObjectURL(file);
-    document.getElementById("result-img").src = previewURL;
-    document.getElementById("result-img").style.display = "block";
+    const resultImg = document.getElementById("result-img");
+    resultImg.src = previewURL;
+    resultImg.style.display = "block";
 
-    const response = await fetch(backendURL, {
-        method: "POST",
-        body: formData
-    });
+    try {
+        const response = await fetch(backendURL, {
+            method: "POST",
+            body: formData
+        });
 
-    if (!response.ok) {
-        alert("Error: Unable to reach backend server.");
-        return;
+        if (!response.ok) {
+            alert("Error: Unable to reach backend server.");
+            return;
+        }
+
+        // backend currently returns image blob
+        const blob = await response.blob();
+        const resultURL = URL.createObjectURL(blob);
+        resultImg.src = resultURL;
+
+        // show dummy disease + remedy
+        const resultsSection = document.getElementById("results-section");
+        resultsSection.classList.remove("hidden");
+        document.getElementById("disease-name").innerText = "Example Leaf Disease";
+        document.getElementById("remedy-text").innerText = "Apply neem oil and avoid overwatering";
+
+    } catch (err) {
+        console.error("Error connecting to backend:", err);
+        alert("Backend connection failed.");
     }
-
-    const blob = await response.blob();
-    const resultURL = URL.createObjectURL(blob);
-
-    // show backend mask output
-    document.getElementById("result-img").src = resultURL;
 }
 </script>
 
@@ -187,4 +138,3 @@ async function sendImageToBackend(fileInput) {
 
 </body>
 </html>
-
