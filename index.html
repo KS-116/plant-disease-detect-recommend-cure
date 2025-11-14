@@ -7,11 +7,10 @@
     <link rel="stylesheet" href="plant-ui.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
-
 <body>
 
 <header>
-    <h1> Plant Disease Care System</h1>
+    <h1>Plant Disease Care System</h1>
 </header>
 
 <nav>
@@ -22,12 +21,12 @@
 </nav>
 
 <main>
-
     <!-- HOME PAGE -->
-    <section id="page-home" class="page-content active">
+    <section id="page-home" class="page-content">
         <h2>Welcome to Your Plant Health Assistant</h2>
         <p>A smart solution for quick identification and actionable cures.</p>
         <button class="cta-button" data-page="detection">Start Detection Now</button>
+        <!-- Add your carousel and contact-box as before -->
     </section>
 
     <!-- DETECTION PAGE -->
@@ -39,21 +38,27 @@
             <label for="image-upload" class="upload-label">
                 <i class="fas fa-camera"></i> Select Image
             </label>
-
-            <input type="file" id="image-upload" accept="image/*" hidden onchange="sendImageToBackend(this)"> 
+            <input type="file" id="image-upload" accept="image/*" hidden> 
 
             <div id="image-preview" class="preview-box">
                 <p>No image selected yet.</p>
                 <img id="result-img" style="max-width:100%; display:none;">
             </div>
+
+            <button id="analyze-btn" disabled>Analyze Leaf</button>
         </section>
 
         <section id="results-section" class="hidden result-card">
             <h3>Analysis Summary</h3>
             <div id="result-content">
                 <p>Disease: <strong id="disease-name">---</strong></p>
-                <p>Remedy Reference: <span id="remedy-text">---</span></p>
+                <p>Remedy: <span id="remedy-text">---</span></p>
             </div>
+        </section>
+
+        <section id="api-analysis-detail" class="hidden api-detail-card">
+            <h3> Detailed API Analysis Output</h3>
+            <p>This area will display JSON output from the backend.</p>
         </section>
     </section>
 
@@ -68,73 +73,15 @@
     <!-- ADVANCEMENTS PAGE -->
     <section id="page-advancements" class="page-content hidden">
         <h2> Latest Advancements in Plant Health AI</h2>
-        <div class="advancements-grid">
-            <div class="advancement-card">
-                <i class="fas fa-lightbulb fa-3x advancement-icon"></i>
-                <h4>Hyperspectral Imaging</h4>
-                <p>Detecting disease days before visible symptoms.</p>
-            </div>
-            <div class="advancement-card">
-                <i class="fas fa-mobile-alt fa-3x advancement-icon"></i>
-                <h4>On-Device Mobile AI</h4>
-                <p>Instant diagnosis without internet.</p>
-            </div>
-            <div class="advancement-card">
-                <i class="fas fa-project-diagram fa-3x advancement-icon"></i>
-                <h4>CNN + Weather Fusion Models</h4>
-                <p>Smarter predictions using combined data.</p>
-            </div>
-        </div>
+        <!-- Your advancements cards go here -->
     </section>
-
 </main>
 
-<!-- BACKEND SCRIPT -->
-<script>
-const backendURL = "https://plant-disease-backend-2a4p.onrender.com/api/detect"; // updated route
-async function sendImageToBackend(fileInput) {
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("image", file); // updated key to match backend
-
-    // show preview
-    const previewURL = URL.createObjectURL(file);
-    const resultImg = document.getElementById("result-img");
-    resultImg.src = previewURL;
-    resultImg.style.display = "block";
-
-    try {
-        const response = await fetch(backendURL, {
-            method: "POST",
-            body: formData
-        });
-
-        if (!response.ok) {
-            alert("Error: Unable to reach backend server.");
-            return;
-        }
-
-        // backend currently returns image blob
-        const blob = await response.blob();
-        const resultURL = URL.createObjectURL(blob);
-        resultImg.src = resultURL;
-
-        // show dummy disease + remedy
-        const resultsSection = document.getElementById("results-section");
-        resultsSection.classList.remove("hidden");
-        document.getElementById("disease-name").innerText = "Example Leaf Disease";
-        document.getElementById("remedy-text").innerText = "Apply neem oil and avoid overwatering";
-
-    } catch (err) {
-        console.error("Error connecting to backend:", err);
-        alert("Backend connection failed.");
-    }
-}
-</script>
+<!-- Loading Spinner -->
+<div id="loading-spinner" class="hidden">
+    <div class="spinner"></div>
+</div>
 
 <script src="detector-logic.js"></script>
-
 </body>
 </html>
