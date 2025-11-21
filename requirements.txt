@@ -1,6 +1,6 @@
-Flask
-Flask-CORS
-torch
-torchvision
-numpy
-Pillow
+Flask==2.3.3
+flask-cors==3.1.2
+Pillow==10.0.1
+numpy==1.26.4
+torch>=2.2.0
+torchvision>=0.15.2
