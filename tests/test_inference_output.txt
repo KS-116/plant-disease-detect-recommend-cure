@@ -1,0 +1,8 @@
+Starting server: /home/codespace/.python/current/bin/python3 vgg_flask.py --port 5001
+Waiting for health endpoint: http://127.0.0.1:5001/health
+Health returned: {'model_loaded': True, 'status': 'ok'}
+POSTing sample image to: http://127.0.0.1:5001/predict
+Predict status: 200
+{'class_id': 1, 'prediction': 'Diseased', 'probabilities': [0.48535022139549255, 0.5146497488021851]}
+Stopping server process...
+Test completed
