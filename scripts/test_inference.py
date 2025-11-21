@@ -43,15 +43,31 @@ def run_test(host, port, start_server=False):
     import requests
     server_proc = None
     if start_server:
-        # Start server as a subprocess
+        # Start server as a subprocess and forward its stdout/stderr into this process
         server_cmd = [sys.executable, "vgg_flask.py", "--port", str(port)]
         print("Starting server:", " ".join(server_cmd))
-        server_proc = subprocess.Popen(server_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        server_proc = subprocess.Popen(server_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+        # Forward server logs to this process' stdout so CI logs include server output
+        import threading
+
+        def _forward_output(pipe):
+            try:
+                for line in iter(pipe.readline, ''):
+                    if not line:
+                        break
+                    print("[server]", line.rstrip())
+            except Exception:
+                pass
+
+        t = threading.Thread(target=_forward_output, args=(server_proc.stdout,), daemon=True)
+        t.start()
 
     try:
         health_url = f"http://{host}:{port}/health"
         print("Waiting for health endpoint:", health_url)
-        info = wait_for_health(health_url, timeout=60.0)
+        # Allow more time in CI for the server to start (downloads, imports)
+        info = wait_for_health(health_url, timeout=120.0)
         print("Health returned:", info)
 
         # Create a small sample image (green square)
