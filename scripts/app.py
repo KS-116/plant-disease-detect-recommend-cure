@@ -5,16 +5,13 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Initialize the Flask application
 app = Flask(__name__)
 CORS(app) 
 
-# --- FIX for the 404 "Not Found" error on the root URL ---
 @app.route('/', methods=['GET'])
 def home():
     return "Plant Disease API Server is running. Use /api/detect (POST method) to analyze images.", 200
 
-# THIS IS THE CORRECT ENDPOINT ADDRESS: /api/detect (Must match frontend JS)
 @app.route('/api/detect', methods=['POST'])
 def detect_disease():
     """
@@ -32,8 +29,7 @@ def detect_disease():
         try:
             image_bytes = file.read()
             logging.info("Calling model prediction function...")
-            
-            # --- MODEL PREDICTION CALL ---
+        
             result = get_prediction_and_remedy(image_bytes)
             
             return jsonify(result), 200

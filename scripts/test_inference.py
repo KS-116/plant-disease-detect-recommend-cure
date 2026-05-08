@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Lightweight end-to-end test for the VGG Flask server.
 
 Usage:
@@ -18,7 +17,7 @@ import os
 
 def ensure_requests():
     try:
-        import requests  # noqa: F401
+        import requests  
     except Exception:
         print("'requests' package not found. Installing...", file=sys.stderr)
         subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
@@ -43,12 +42,10 @@ def run_test(host, port, start_server=False):
     import requests
     server_proc = None
     if start_server:
-        # Start server as a subprocess and forward its stdout/stderr into this process
         server_cmd = [sys.executable, "vgg_flask.py", "--port", str(port)]
         print("Starting server:", " ".join(server_cmd))
         server_proc = subprocess.Popen(server_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
-        # Forward server logs to this process' stdout so CI logs include server output
         import threading
 
         def _forward_output(pipe):
@@ -66,11 +63,9 @@ def run_test(host, port, start_server=False):
     try:
         health_url = f"http://{host}:{port}/health"
         print("Waiting for health endpoint:", health_url)
-        # Allow more time in CI for the server to start (downloads, imports)
         info = wait_for_health(health_url, timeout=120.0)
         print("Health returned:", info)
 
-        # Create a small sample image (green square)
         try:
             from PIL import Image
             import io
@@ -104,7 +99,6 @@ def run_test(host, port, start_server=False):
                 server_proc.wait(timeout=5)
             except Exception:
                 server_proc.kill()
-        # cleanup
         try:
             os.unlink(tmpf.name)
         except Exception:
