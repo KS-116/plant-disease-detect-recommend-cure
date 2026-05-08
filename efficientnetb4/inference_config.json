@@ -1,0 +1,7 @@
+{
+  "model_name": "google/efficientnet-b4",
+  "img_size": 224,
+  "confidence_threshold": 0.65,
+  "num_tta_passes": 5,
+  "note": "Average softmax probs across 5 TTA variants then argmax. If max(prob) < 0.65 show 'Uncertain \u2014 please retake photo in better lighting'."
+}

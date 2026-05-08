@@ -1,0 +1,8 @@
+torch==2.9.1
+torchvision==0.24.1
+transformers==4.46.0
+Pillow
+numpy
+opencv-python-headless
+fastapi==0.112.2
+pydantic==2.8.2
