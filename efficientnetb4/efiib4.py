@@ -31,10 +31,6 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
 
-# ============================================================
-# CONFIGURATION
-# ============================================================
-
 MERGED_DATASET_PATH = r"D:\Plant disease\Merged_Dataset"
 OUTPUT_DIR          = r"D:\Plant disease\final_model"
 MODEL_NAME          = "google/efficientnet-b4"
@@ -62,10 +58,6 @@ PHASE2_LAYERS   = ["blocks.3", "blocks.4", "blocks.5", "blocks.6"]
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
-# ============================================================
-# SEED & DEVICE
-# ============================================================
-
 SEED = 42
 random.seed(SEED)
 np.random.seed(SEED)
@@ -77,10 +69,6 @@ print(f"Using device : {torch.cuda.get_device_name(0)}")
 print(f"VRAM         : {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
 
 
-# ============================================================
-# LOAD PROCESSOR
-# ============================================================
-
 print(f"\nLoading processor for {MODEL_NAME}...")
 processor  = AutoImageProcessor.from_pretrained(MODEL_NAME)
 IMAGE_MEAN = processor.image_mean
@@ -89,13 +77,6 @@ print(f"mean : {IMAGE_MEAN}")
 print(f"std  : {IMAGE_STD}")
 
 
-# ============================================================
-# AUGMENTATION
-# ============================================================
-# Deliberately lighter than previous runs to fix the underfitting
-# (60% train / 88% val gap) seen with B3.
-# Rule: smaller gap between train and val transform difficulty
-# = more honest training signal = better real-world accuracy.
 
 train_transform = transforms.Compose([
     transforms.RandomResizedCrop(IMG_SIZE, scale=(0.5, 1.0), ratio=(0.8, 1.25)),
@@ -122,34 +103,34 @@ val_transform = transforms.Compose([
 ])
 
 tta_transforms = [
-    # 1. Plain resize
+  
     transforms.Compose([
         transforms.Resize((IMG_SIZE, IMG_SIZE)),
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGE_MEAN, std=IMAGE_STD),
     ]),
-    # 2. Larger + centre crop
+
     transforms.Compose([
         transforms.Resize((IMG_SIZE + 32, IMG_SIZE + 32)),
         transforms.CenterCrop(IMG_SIZE),
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGE_MEAN, std=IMAGE_STD),
     ]),
-    # 3. Horizontal flip
+
     transforms.Compose([
         transforms.Resize((IMG_SIZE, IMG_SIZE)),
         transforms.RandomHorizontalFlip(p=1.0),
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGE_MEAN, std=IMAGE_STD),
     ]),
-    # 4. Vertical flip
+  
     transforms.Compose([
         transforms.Resize((IMG_SIZE, IMG_SIZE)),
         transforms.RandomVerticalFlip(p=1.0),
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGE_MEAN, std=IMAGE_STD),
     ]),
-    # 5. Larger + random crop
+  
     transforms.Compose([
         transforms.Resize((IMG_SIZE + 16, IMG_SIZE + 16)),
         transforms.RandomCrop(IMG_SIZE),
@@ -159,9 +140,6 @@ tta_transforms = [
 ]
 
 
-# ============================================================
-# MIXUP + CUTMIX
-# ============================================================
 
 def mixup_batch(images, labels, alpha):
     """lam clamped >= 0.5 so labels_a is always the dominant label."""
@@ -196,9 +174,6 @@ def mixed_criterion(criterion, pred, a, b, lam):
     return lam * criterion(pred, a) + (1 - lam) * criterion(pred, b)
 
 
-# ============================================================
-# FREEZE HELPER
-# ============================================================
 
 def set_trainable_layers(model, block_names: list):
     """
@@ -230,9 +205,6 @@ def set_trainable_layers(model, block_names: list):
         print(f"  Trainable: {trainable:,} / {total:,}  ({unfrozen} tensors unfrozen)")
 
 
-# ============================================================
-# LOAD DATASET
-# ============================================================
 def main():
     print("\n[1/5] Loading dataset...")
     if not os.path.exists(MERGED_DATASET_PATH):
@@ -269,17 +241,11 @@ def main():
         json.dump(full_dataset.class_to_idx, f, indent=2)
 
 
-    # ============================================================
-    # TRAIN / VALIDATION SPLIT
-    # ============================================================
-
     indices      = list(range(len(full_dataset)))
     stratify_key = [
         f"{all_targets[i]}_{'pd' if is_plantdoc[i] else 'pv'}"
         for i in indices
     ]
-
-    # Fallback to class-only if any combo has just 1 sample
     if any(v == 1 for v in Counter(stratify_key).values()):
         print("\n[INFO] Some class+source combos have 1 sample — class-only stratification.")
         stratify_key = all_targets
@@ -300,9 +266,6 @@ def main():
         )
 
 
-    # ============================================================
-    # DATASETS & SOURCE-AWARE SAMPLER
-    # ============================================================
 
     train_dataset = torch.utils.data.Subset(
         datasets.ImageFolder(MERGED_DATASET_PATH, transform=train_transform), train_idx
@@ -338,10 +301,6 @@ def main():
     )
 
 
-    # ============================================================
-    # LOAD MODEL
-    # ============================================================
-
     print(f"\n[2/5] Loading {MODEL_NAME}...")
     model = AutoModelForImageClassification.from_pretrained(
         MODEL_NAME,
@@ -355,10 +314,6 @@ def main():
 
     set_trainable_layers(model, PHASE1_LAYERS)
 
-
-    # ============================================================
-    # LOSS / OPTIMIZER / SCHEDULER
-    # ============================================================
 
     criterion = nn.CrossEntropyLoss(label_smoothing=LABEL_SMOOTHING)
     optimizer = AdamW(
@@ -380,9 +335,6 @@ def main():
     best_model_path   = os.path.join(OUTPUT_DIR, "best_model.pth")
 
 
-    # ============================================================
-    # TRAINING LOOP
-    # ============================================================
 
     print("\n[3/5] Training...")
 
@@ -391,7 +343,6 @@ def main():
         current_lr = scheduler.get_last_lr()[0]
         print(f"\nEpoch {epoch + 1}/{EPOCHS}  (lr={current_lr:.2e})")
 
-        # Progressive unfreeze
         if epoch == UNFREEZE_EPOCH:
             print("  → Unfreezing deeper blocks...")
             set_trainable_layers(model, PHASE2_LAYERS)
@@ -405,7 +356,6 @@ def main():
                 T_mult=1, eta_min=1e-6,
             )
 
-        # ── Train ──────────────────────────────────────────────────────────
         model.train()
         train_loss, correct, total = 0.0, 0, 0
 
@@ -445,7 +395,7 @@ def main():
         history["lr"].append(current_lr)
         print(f"  Train  — loss: {avg_tl:.4f}  acc: {t_acc:.4f}")
 
-        # ── Validation ─────────────────────────────────────────────────────
+  
         model.eval()
         val_loss, correct, total = 0.0, 0, 0
 
@@ -464,7 +414,6 @@ def main():
         history["val_loss"].append(avg_vl)
         history["val_acc"].append(v_acc)
 
-        # Overfitting gap warning
         gap          = t_acc - v_acc
         gap_note     = f"  [OVERFIT gap={gap:.3f}]" if gap > 0.15 else ""
         underfit_note= f"  [UNDERFIT gap={abs(gap):.3f}]" if gap < -0.10 else ""
@@ -486,18 +435,11 @@ def main():
             break
 
 
-    # ============================================================
-    # RELOAD BEST WEIGHTS
-    # ============================================================
-
     print(f"\n[4/5] Reloading best weights (val_acc={best_val_acc:.4f})...")
     model.load_state_dict(torch.load(best_model_path, map_location=device))
     model.eval()
 
 
-    # ============================================================
-    # FINAL EVALUATION WITH TTA — SPLIT BY SOURCE
-    # ============================================================
 
     print("Running TTA evaluation split by source...")
     print("(PlantDoc accuracy = what your website will achieve on real photos)")
@@ -533,10 +475,6 @@ def main():
                 results[key]["labels"].append(label)
                 results[key]["probs"].append(avg_prob)
 
-
-    # ============================================================
-    # METRICS
-    # ============================================================
 
     def report(title, labels, preds, class_names):
         print(f"\n{'=' * 60}\n  {title}\n{'=' * 60}")
@@ -581,10 +519,6 @@ def main():
     print(f"\nMetrics saved.")
 
 
-    # ============================================================
-    # PLOTS
-    # ============================================================
-
     epochs_ran = len(history["train_loss"])
     x          = list(range(1, epochs_ran + 1))
 
@@ -611,7 +545,6 @@ def main():
     plt.savefig(os.path.join(OUTPUT_DIR, "training_curves.png"), dpi=150)
     plt.close(fig)
 
-    # Confusion matrix
     cm = confusion_matrix(results["all"]["labels"], results["all"]["preds"])
     fig, ax = plt.subplots(
         figsize=(max(12, NUM_CLASSES // 2), max(10, NUM_CLASSES // 2))
@@ -625,7 +558,6 @@ def main():
     plt.savefig(os.path.join(OUTPUT_DIR, "confusion_matrix.png"), dpi=150)
     plt.close(fig)
 
-    # ROC curve
     y_true_bin = label_binarize(results["all"]["labels"], classes=range(NUM_CLASSES))
     y_score    = np.array(results["all"]["probs"])
     fig, ax    = plt.subplots(figsize=(10, 8))
@@ -649,15 +581,10 @@ def main():
     print("Plots saved.")
 
 
-    # ============================================================
-    # SAVE MODEL
-    # ============================================================
-
     print("\n[5/5] Saving deployable model...")
     model.save_pretrained(OUTPUT_DIR)
     processor.save_pretrained(OUTPUT_DIR)
 
-    # Clean up the raw .pth file — only HuggingFace format needed for website
     if os.path.exists(best_model_path):
         os.remove(best_model_path)
         print("Cleaned up temporary .pth file.")
@@ -693,34 +620,6 @@ def main():
     print("\nDone!")
 
 
-# ============================================================
-# WEBSITE INFERENCE GUIDE
-# ============================================================
-# Copy this function into your website backend:
-#
-# from transformers import AutoImageProcessor, AutoModelForImageClassification
-# from torchvision import transforms
-# from PIL import Image
-# import torch, numpy as np
-#
-# model     = AutoModelForImageClassification.from_pretrained(OUTPUT_DIR)
-# processor = AutoImageProcessor.from_pretrained(OUTPUT_DIR)
-# model.eval()
-#
-# def predict(image_path):
-#     pil_img   = Image.open(image_path).convert("RGB")
-#     probs_list = []
-#     for tfm in tta_transforms:
-#         tensor = tfm(pil_img).unsqueeze(0)
-#         with torch.no_grad():
-#             logits = model(pixel_values=tensor).logits
-#         probs_list.append(torch.softmax(logits, dim=1).squeeze().numpy())
-#     avg       = np.mean(probs_list, axis=0)
-#     confidence= float(np.max(avg))
-#     if confidence < 0.65:
-#         return "Uncertain — please retake photo in better lighting", confidence
-#     pred_idx  = int(np.argmax(avg))
-#     label     = model.config.id2label[str(pred_idx)]
-#     return label, confidence
+
 if __name__ == "__main__":
     main()
